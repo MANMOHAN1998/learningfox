@@ -1,0 +1,83 @@
+<!-- contact/templates/contact/contact_form.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Form</title>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Contact Us</h1>
+        <form id="contactForm" method="post" action="{% url 'contact_view' %}" class="needs-validation" novalidate>
+            {% csrf_token %}
+            <label for="id_name">Name:</label>
+            <input type="text" name="name" id="id_name" required>
+
+            <label for="id_email">Email:</label>
+            <input type="email" name="email" id="id_email" required>
+
+            <label for="id_message">Message:</label>
+            <textarea name="message" id="id_message" required></textarea>
+
+            <div class="g-recaptcha" data-sitekey="your-recaptcha-public-key"></div>
+
+            <button id="submitBtn" type="button" class="btn btn-primary">Submit</button>
+        </form>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1" role="dialog" aria-labelledby="successModalLabel" aria-hidden="true">
+        <!-- ... (previous content) ... -->
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#submitBtn').on('click', function() {
+                // Validate the form
+                if ($('#contactForm')[0].checkValidity()) {
+                    // Disable the submit button to prevent multiple submissions
+                    $('#submitBtn').prop('disabled', true);
+
+                    // Verify reCAPTCHA
+                    grecaptcha.ready(function() {
+                        grecaptcha.execute('your-recaptcha-public-key', {action: 'submit'}).then(function(token) {
+                            // Add the reCAPTCHA token to the form data
+                            $('#contactForm').append('<input type="hidden" name="recaptcha_token" value="' + token + '">');
+
+                            // Perform AJAX form submission
+                            $.ajax({
+                                url: '{% url "contact_view" %}',
+                                method: 'POST',
+                                data: $('#contactForm').serialize(),
+                                success: function(response) {
+                                    if (response.status === 'success') {
+                                        // Show the success modal
+                                        $('#successModal').modal('show');
+                                    } else {
+                                        // Handle form errors if needed
+                                        alert('Error submitting the form. Please check your inputs.');
+                                    }
+                                },
+                                error: function() {
+                                    // Handle errors if needed
+                                    alert('Error submitting the form. Please try again.');
+                                },
+                                complete: function() {
+                                    // Enable the submit button after completion
+                                    $('#submitBtn').prop('disabled', false);
+                                }
+                            });
+                        });
+                    });
+                } else {
+                    // If the form is not valid, trigger form validation
+                    $('#contactForm').addClass('was-validated');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

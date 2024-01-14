@@ -1,7 +1,8 @@
 from django.shortcuts import render, HttpResponse, redirect
 from .models import *
-
-
+import requests
+import json
+from django.contrib import messages
 
 def home(request):
     return render(request,'home.html')
@@ -17,9 +18,22 @@ def contact(request):
         email  = request.POST.get('email')
         subject  = request.POST.get('subject')
         message  = request.POST.get('message')
-        print(message,subject,email,name, sep='\n')
-        contactusers.objects.create(name=name,email=email,subject=subject,message=message)
-        return redirect('/')
+        client_key = request.POST['g-recaptcha-response']
+        secrate_key = "6Ldy-U0pAAAAAIcsBrka1hAbuOMRR4YE5o2NfsWk"
+        captcha_data = {"secret":secrate_key,"response":client_key}
+        r = requests.post("https://www.google.com/recaptcha/api/siteverify", data=captcha_data)
+        
+        response = json.loads(r.text)
+        print('this is response:-',response)
+        varify = response['success']
+        print(message,subject,email,name,varify, sep='\n')
+        
+        if varify:
+            contactusers.objects.create(name=name,email=email,subject=subject,message=message)
+            messages.success(request, 'form submitted!!')
+            return redirect('/')
+        else:
+            messages.warning(request, 'please try again!!')
     return render(request, 'contact.html')
 
 def about(request):
